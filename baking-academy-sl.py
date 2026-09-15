@@ -94,7 +94,7 @@ with st.sidebar:
         if st.button(label, use_container_width=True):
             injected_prompt = prompt_text
             
-    if st.button("🔄 Reset Academy Session", type="minor", use_container_width=True):
+    if st.button("🔄 Reset Academy Session", type="secondary", use_container_width=True):
         del st.session_state.chat_session
         st.rerun()
 
