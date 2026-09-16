@@ -168,7 +168,7 @@ with col_market:
               delta="Oversold (<30)" if current_rsi < 30 else ("Overbought (>70)" if current_rsi > 70 else "Neutral"))
     
     st.markdown("#### 🔄 Stock Price & 5-Day SMA Convergence Chart")
-    st.line_chart(data=history_df, x="Date", y=["Price", "5_Day_SMA"], color=["#00CC96", "#AB63FA"], use_container_width=True)
+    st.line_chart(data=history_df, x="Date", y=["Price", "5_Day_SMA"], color=["#00CC96", "#AB63FA"], width='stretch')
     
     st.write("#### 📰 Captured Sentiment Context Input Streams")
     for item in news_feed:
@@ -182,13 +182,13 @@ with col_portfolio:
     
     st.metric(label="Simulated Cash Liquid Runway Balance", value=f"${cash_balance:,.2f}")
     st.markdown("##### Current Holdings Assets Allocation Ledger Table")
-    st.dataframe(portfolio_df[portfolio_df["ticker"] != "CASH"], use_container_width=True, hide_index=True)
+    st.dataframe(portfolio_df[portfolio_df["ticker"] != "CASH"], width='stretch', hide_index=True)
     
     st.markdown("---")
     st.subheader("🤖 GenAI Fund Broker Execution Desk")
     st.caption("Prompt the autonomous system framework to review metrics logs and execute asset database modifications.")
     
-    if st.button("⚡ Run Autonomous Strategy Loop Lifecycle", use_container_width=True):
+    if st.button("⚡ Run Autonomous Strategy Loop Lifecycle", width='stretch'):
         system_instruction = """
         You are an institutional algorithmic execution agent. Your objective is to run portfolio optimizations.
         Analyze numerical indicators (SMA variations and RSI oscillators) alongside structural textual news vectors.
@@ -197,11 +197,11 @@ with col_portfolio:
         
         agent_prompt = f"""
         Asset Ticker Identity: {ticker_choice}
-        Current Spot Market Value: \${current_spot_price}
-        Calculated 5-Day Simple Moving Average (SMA): \${current_sma}
+        Current Spot Market Value: ${current_spot_price}
+        Calculated 5-Day Simple Moving Average (SMA): ${current_sma}
         Calculated Relative Strength Index (RSI-14): {current_rsi}
         Live Contextual Headlines: {news_feed}
-        Available Investment Liquidity: \${cash_balance}
+        Available Investment Liquidity: ${cash_balance}
         
         Evaluate the data criteria above and provide your decision.
         """
@@ -245,4 +245,4 @@ with col_portfolio:
         conn = sqlite3.connect(DB_FILE)
         ledger_df = pd.read_sql_query("SELECT * FROM transaction_ledger ORDER BY id DESC", conn)
         conn.close()
-        st.dataframe(ledger_df, use_container_width=True, hide_index=True)
+        st.dataframe(ledger_df, width='stretch', hide_index=True)
