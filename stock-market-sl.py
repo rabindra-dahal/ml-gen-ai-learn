@@ -101,11 +101,11 @@ with col1:
     
     # Live KPI Cards
     kpi1, kpi2 = st.columns(2)
-    kpi1.metric(label="Current Spot Value", value=f"\({live_price:,.2f}", delta=f"\){price_delta} (24h)")
+    kpi1.metric(label="Current Spot Value", value=f"{live_price:,.2f}", delta=f"{price_delta} (24h)")
     kpi2.metric(label="Simulated Trend Filter", value=simulated_trend)
     
     # Render interactive price timeline
-    st.line_chart(data=history_df, x="Date", y="Price", color="#00CC96", use_container_width=True)
+    st.line_chart(data=history_df, x="Date", y="Price", color="#00CC96", width='stretch')
     
     st.write("#### 📰 Extracted Real-Time Unstructured News Feed")
     for news in market_news:
@@ -115,7 +115,7 @@ with col2:
     st.subheader("🤖 GenAI Agent Evaluation Module")
     st.markdown("Click below to prompt the AI agent to ingest the live market state and output a validated trading strategy decision matrix.")
     
-    if st.button("🚀 Execute GenAI Analysis Engine", use_container_width=True):
+    if st.button("🚀 Execute GenAI Analysis Engine", width='stretch'):
         
         # Ground prompt layout with current database parameters (RAG framework)
         system_instruction = """
@@ -126,7 +126,7 @@ with col2:
         
         agent_prompt = f"""
         Asset Ticker: {ticker_clean}
-        Current Market Price: \${live_price}
+        Current Market Price: {live_price}
         Recent Price History Matrix (Last 5 Ticks): {history_df['Price'].tail(5).tolist()}
         Live Unstructured News Input Context: {market_news}
         
@@ -162,7 +162,7 @@ with col2:
                     
                 # Technical Assessment Details Display cards
                 st.metric(label="Model Evaluation Confidence", value=f"{analysis.confidence_score * 100:.1f}%")
-                st.metric(label="AI Projected Target Price", value=f"\${analysis.target_price:,.2f}")
+                st.metric(label="AI Projected Target Price", value=f"{analysis.target_price:,.2f}")
                 
                 st.info(f"**Agent Rationale:** {analysis.justification}")
                 
