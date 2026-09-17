@@ -4,6 +4,7 @@ It is a learning project to learn modern trend regarding gen ai using python.
 - Executing LLM orchestration pipeline
 - Demonstrating GEN AI use case scenario in various industries
 - Stock Market Simulator LLM pipeline
+- Added movie recommendation LLM pipeline
 
 ## How to run app?
 
