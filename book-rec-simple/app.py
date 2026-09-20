@@ -81,7 +81,7 @@ with st.sidebar:
                 new_rating = st.feedback(
                     "stars", 
                     key=f"stars_{idx}", 
-                    value=book["rating"]
+                    default=book["rating"]
                 )
                 
                 # Accompanying reflection message textarea box
@@ -108,10 +108,10 @@ with st.sidebar:
             data=txt_export,
             file_name="reading_history_log.txt",
             mime="text/plain",
-            use_container_width=True,
+            width='stretch',
         )
 
-        if st.button("🗑️ Clear Reading List", use_container_width=True):
+        if st.button("🗑️ Clear Reading List", width='stretch'):
             utils.delete_all_tracked_books()
             st.session_state.reading_list = []
             st.rerun()
@@ -120,7 +120,7 @@ with st.sidebar:
 
     st.markdown("---")
     if st.button(
-        "🔄 Reset Book Finder Session", type="destructive", use_container_width=True
+        "🔄 Reset Book Finder Session", type="primary", width='stretch'
     ):
         utils.clear_entire_session()
         st.session_state.book_messages = []
@@ -137,9 +137,10 @@ charts.render_analytics_dashboard(utils.fetch_analytics_logs())
 if "book_chat" not in st.session_state:
     history_instances = []
     for msg in st.session_state.book_messages:
+        api_role = "model" if msg["role"] == "assistant" else msg["role"]
         history_instances.append(
             types.Content(
-                role=msg["role"],
+                role=api_role,
                 parts=[types.Part.from_text(text=msg["content"])],
             )
         )
