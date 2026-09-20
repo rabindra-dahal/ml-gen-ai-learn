@@ -1,6 +1,6 @@
 """Data persistence engine providing SQLite tracking workflows.
 
-Manages conversational message history, reading goals, and a reading tracker.
+Manages conversational message history, reading goals, and book reviews.
 """
 
 from datetime import datetime
@@ -10,7 +10,7 @@ DB_FILE = "book_recommender.db"
 
 
 def init_db() -> None:
-    """Initializes schema blueprints for book collection metrics."""
+    """Initializes schema blueprints for book collection and reviews."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute(
@@ -24,10 +24,13 @@ def init_db() -> None:
             books_target INTEGER
         )"""
     )
+    # UPDATED: Altered to track granular rating states and text reviews natively
     c.execute(
         """CREATE TABLE IF NOT EXISTS reading_list (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            book_title TEXT UNIQUE
+            book_title TEXT UNIQUE,
+            rating INTEGER DEFAULT 0,
+            review_notes TEXT DEFAULT ''
         )"""
     )
     conn.commit()
@@ -77,12 +80,16 @@ def fetch_analytics_logs() -> list[tuple]:
     return rows
 
 
-def load_persisted_reading_list() -> list[str]:
-    """Fetches all raw book title strings tracked in the database collection."""
+def load_persisted_reading_list() -> list[dict]:
+    """Fetches all structured book metrics including active ratings and reviews."""
     conn = sqlite3.connect(DB_FILE)
-    rows = conn.cursor().execute("SELECT book_title FROM reading_list").fetchall()
+    rows = conn.cursor().execute(
+        "SELECT book_title, rating, review_notes FROM reading_list ORDER BY id DESC"
+    ).fetchall()
     conn.close()
-    return [row[0] for row in rows]
+    return [
+        {"title": row[0], "rating": row[1], "review": row[2]} for row in rows
+    ]
 
 
 def save_book_to_list(book_title: str) -> None:
@@ -91,6 +98,17 @@ def save_book_to_list(book_title: str) -> None:
     conn.cursor().execute(
         "INSERT OR IGNORE INTO reading_list (book_title) VALUES (?)",
         (book_title.strip(),),
+    )
+    conn.commit()
+    conn.close()
+
+
+def update_book_review(book_title: str, rating: int, review_notes: str) -> None:
+    """Updates the explicit star evaluation scores and review strings."""
+    conn = sqlite3.connect(DB_FILE)
+    conn.cursor().execute(
+        "UPDATE reading_list SET rating = ?, review_notes = ? WHERE book_title = ?",
+        (rating, review_notes, book_title),
     )
     conn.commit()
     conn.close()

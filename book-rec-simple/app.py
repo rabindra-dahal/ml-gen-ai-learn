@@ -1,6 +1,6 @@
 """Main entry platform controller orchestrating the book discovery engine.
 
-Powered by Gemini 3.6 direct chat session memory parameters.
+Powered by Gemini 3.6 direct chat session memory parameters with interactive reviews.
 """
 
 import os
@@ -18,7 +18,6 @@ if not os.getenv("GEMINI_API_KEY"):
     st.error("Missing GEMINI_API_KEY inside your .env file!")
     st.stop()
 
-# Initialize baseline schemas
 utils.init_db()
 
 
@@ -33,7 +32,6 @@ st.set_page_config(
     page_title="Instant GenAI Book Finder", page_icon="📚", layout="wide"
 )
 
-# Sync backend database cache with browser frame states
 if "book_messages" not in st.session_state:
     st.session_state.book_messages = utils.load_persisted_chat()
 if "reading_list" not in st.session_state:
@@ -70,25 +68,50 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    # 📚 DYNAMIC SIDEBAR INTERACTIVE PANEL FOR BOOK TRACKING
-    st.subheader("📚 Saved Reading List")
+    # 📚 UPDATED: SIDEBAR INTERACTIVE STAR-RATING & REVIEW ENGINE
+    st.subheader("📚 Tracked Books & Logs")
     if st.session_state.reading_list:
-        for book in st.session_state.reading_list:
-            st.write(f"📖 {book}")
+        for idx, book in enumerate(st.session_state.reading_list):
+            title = book["title"]
+            stars_preview = "⭐" * book["rating"] if book["rating"] > 0 else "Unrated"
+            
+            # Use separate expanding sections per book row for cleaner visual hierarchy
+            with st.expander(f"📖 {title} ({stars_preview})", expanded=False):
+                # Interactive native rating metric selection component
+                new_rating = st.feedback(
+                    "stars", 
+                    key=f"stars_{idx}", 
+                    value=book["rating"]
+                )
+                
+                # Accompanying reflection message textarea box
+                new_review = st.text_area(
+                    "My Review Notes:", 
+                    value=book["review"], 
+                    key=f"rev_text_{idx}",
+                    placeholder="Type your notes here..."
+                )
+                
+                # Check for row context property modifications to save records
+                if (new_rating != book["rating"]) or (new_review != book["review"]):
+                    utils.update_book_review(title, new_rating, new_review)
+                    st.session_state.reading_list = utils.load_persisted_reading_list()
+                    st.rerun()
 
-        # Assemble plain text backup lines for local exporting tools
-        txt_export = "\n".join(
-            [f"- [ ] {b}" for b in st.session_state.reading_list]
-        )
+        # Compile plain text lines for exporting reviews
+        txt_export = "MY COMPILING READING LOG:\n\n"
+        for b in st.session_state.reading_list:
+            txt_export += f"- {b['title']}\n  Rating: {'★' * b['rating']}\n  Notes: {b['review']}\n\n"
+            
         st.download_button(
-            "📥 Download Reading List",
+            "📥 Download Tracker Log",
             data=txt_export,
-            file_name="my_reading_list.txt",
+            file_name="reading_history_log.txt",
             mime="text/plain",
-            width='stretch',
+            use_container_width=True,
         )
 
-        if st.button("🗑️ Clear Reading List", width='stretch'):
+        if st.button("🗑️ Clear Reading List", use_container_width=True):
             utils.delete_all_tracked_books()
             st.session_state.reading_list = []
             st.rerun()
@@ -97,7 +120,7 @@ with st.sidebar:
 
     st.markdown("---")
     if st.button(
-        "🔄 Reset Book Finder Session", type="primary", width='stretch'
+        "🔄 Reset Book Finder Session", type="destructive", use_container_width=True
     ):
         utils.clear_entire_session()
         st.session_state.book_messages = []
@@ -109,10 +132,7 @@ with st.sidebar:
 st.title("📚 Your GenAI Literary Companion")
 st.caption("Powered by **Gemini 3.6** Direct Chat Session Architecture")
 
-# Render analytics historical logs layout block
 charts.render_analytics_dashboard(utils.fetch_analytics_logs())
-
-# --- INSTANTIATE PERSISTENT CHAT SESSION ---
 
 if "book_chat" not in st.session_state:
     history_instances = []
@@ -123,21 +143,16 @@ if "book_chat" not in st.session_state:
                 parts=[types.Part.from_text(text=msg["content"])],
             )
         )
-
-    # Boot server-side managed context memory engine
     st.session_state.book_chat = client.chats.create(
         model="gemini-3.6-flash", history=history_instances
     )
 
-# Render historical conversation dialogue timelines
 for index, message in enumerate(st.session_state.book_messages):
     with st.chat_message(message["role"]):
         if message["role"] == "user":
             st.markdown(message["content"])
         else:
             views.render_markdown_response(message["content"], t_idx=index)
-
-# --- HANDLE CONVERSATIONAL CHAT INPUT LOOP ---
 
 if user_input := st.chat_input(
     "Tell me what you last read, your mood, or a topic you want to explore..."
@@ -147,8 +162,6 @@ if user_input := st.chat_input(
     utils.save_chat_message("user", user_input)
     st.session_state.book_messages.append({"role": "user", "content": user_input})
 
-    # Conditioning blueprint directive system instructions
-    # We enforce strict formatting conventions here so views.py can reliably extract book headings
     sys_ins = (
         "You are an expert literary curator and librarian. Provide an engaging, "
         "highly personalized reading recommendation summary.\n"
@@ -164,7 +177,6 @@ if user_input := st.chat_input(
     with st.chat_message("assistant"):
         with st.spinner("Curating your reading list..."):
             try:
-                # Fast conversational message transaction
                 response = st.session_state.book_chat.send_message(
                     message=user_input,
                     config=types.GenerateContentConfig(
@@ -172,25 +184,20 @@ if user_input := st.chat_input(
                         temperature=0.4,
                     ),
                 )
-
                 response_text = response.text
 
                 if not response_text or response_text.strip() == "":
-                    st.error(
-                        "⚠️ The pipeline encountered a connection delay. Please re-type your request."
-                    )
+                    st.error("⚠️ The pipeline encountered a connection delay. Please re-type your request.")
                     st.stop()
 
                 current_turn = len(st.session_state.book_messages)
                 views.render_markdown_response(response_text, t_idx=current_turn)
 
-                # Persist updates to storage
                 utils.save_chat_message("assistant", response_text)
                 utils.log_reading_goal(target_reading_pace)
                 st.session_state.book_messages.append(
                     {"role": "assistant", "content": response_text}
                 )
                 st.rerun()
-
             except Exception as err:
                 st.error(f"Chat Session Error: {str(err)}")
