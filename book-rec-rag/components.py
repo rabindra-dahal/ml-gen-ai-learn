@@ -19,7 +19,7 @@ def show_review_modal(book_data: dict, index: int) -> None:
             key=f"modal_notes_{index}"
         )
         
-        if st.form_submit_button("💾 Save Review Metrics", use_container_width=True):
+        if st.form_submit_button("💾 Save Review Metrics", width='stretch'):
             utils.update_book_review(book_data["title"], current_stars, current_text)
             st.session_state.reading_list = utils.load_persisted_reading_list()
             st.toast("Review modifications applied successfully!")
@@ -58,10 +58,10 @@ def render_compact_tracker() -> None:
             data=txt_export,
             file_name="reading_history_log.txt",
             mime="text/plain",
-            use_container_width=True,
+            width='stretch',
         )
 
-        if st.button("🗑️ Wipe All Logs", use_container_width=True, type="secondary"):
+        if st.button("🗑️ Wipe All Logs", width='stretch', type="secondary"):
             utils.delete_all_tracked_books()
             st.session_state.reading_list = []
             st.rerun()

@@ -30,9 +30,9 @@ def render_markdown_response(content: str, t_idx: int) -> None:
                 display_name = (
                     title.split("by")[0].strip() if "by" in title else title
                 )
-                if st.button(f"📥 Save: {display_name}", key=btn_key):
+                # FIXED: use_container_width=True replaced with width="stretch"
+                if st.button(f"📥 Save: {display_name}", key=btn_key, width="stretch"):
                     utils.save_book_to_list(title)
-                    # Force updated reload into memory dictionaries
                     st.session_state.reading_list = (
                         utils.load_persisted_reading_list()
                     )
