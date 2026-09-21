@@ -1,6 +1,6 @@
 """Data persistence engine providing SQLite tracking workflows.
 
-Manages conversational message history, reviews, and RAG vector storage.
+Manages conversational message history, reviews, RAG, and API call counters.
 """
 
 from datetime import datetime
@@ -21,32 +21,47 @@ def init_db() -> None:
     )
     c.execute(
         """CREATE TABLE IF NOT EXISTS reading_goal_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            log_date TEXT UNIQUE, 
-            books_target INTEGER
+            id INTEGER PRIMARY KEY AUTOINCREMENT, log_date TEXT UNIQUE, books_target INTEGER
         )"""
     )
     c.execute(
         """CREATE TABLE IF NOT EXISTS reading_list (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            book_title TEXT UNIQUE,
-            rating INTEGER DEFAULT 0,
-            review_notes TEXT DEFAULT ''
+            id INTEGER PRIMARY KEY AUTOINCREMENT, book_title TEXT UNIQUE,
+            rating INTEGER DEFAULT 0, review_notes TEXT DEFAULT ''
         )"""
     )
-    # RAG Table: Vector knowledge base storage
     c.execute(
         """CREATE TABLE IF NOT EXISTS book_knowledge_base (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            title TEXT, 
-            author TEXT,
-            genre TEXT,
-            summary TEXT,
-            embedding_json TEXT
+            id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, author TEXT,
+            genre TEXT, summary TEXT, embedding_json TEXT
+        )"""
+    )
+    c.execute(
+        """CREATE TABLE IF NOT EXISTS api_usage_telemetry (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, call_type TEXT, timestamp TEXT
         )"""
     )
     conn.commit()
     conn.close()
+
+
+def increment_api_counter(call_type: str) -> None:
+    """Logs an API key event to the telemetry table."""
+    conn = sqlite3.connect(DB_FILE)
+    conn.cursor().execute(
+        "INSERT INTO api_usage_telemetry (call_type, timestamp) VALUES (?, ?)",
+        (call_type, datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_total_api_calls() -> int:
+    """Returns the total number of recorded Gemini API calls."""
+    conn = sqlite3.connect(DB_FILE)
+    res = conn.cursor().execute("SELECT COUNT(*) FROM api_usage_telemetry").fetchone()
+    conn.close()
+    return res[0] if res else 0
 
 
 def load_persisted_chat() -> list[dict]:
@@ -133,15 +148,13 @@ def delete_all_tracked_books() -> None:
 
 
 def clear_entire_session() -> None:
-    """Purges chat dialogue tables and active trackers during master clear actions."""
+    """Purges chat dialogue tables, telemetry, and active trackers."""
     conn = sqlite3.connect(DB_FILE)
     conn.cursor().execute("DELETE FROM chat_history")
     conn.cursor().execute("DELETE FROM reading_list")
+    conn.cursor().execute("DELETE FROM api_usage_telemetry")
     conn.commit()
     conn.close()
-
-
-# --- NEW: RAG UTILITIES ---
 
 
 def save_book_to_knowledge_base(
@@ -198,6 +211,5 @@ def query_vector_store_rag(
             )
         )
 
-    # Sort descending by highest similarity score
-    results.sort(key=lambda x: x[0], reverse=True)
-    return [item[1] for item in results[:limit]]
+    results.sort(key=lambda x: x, reverse=True)
+    return [item for item in results[:limit]]
