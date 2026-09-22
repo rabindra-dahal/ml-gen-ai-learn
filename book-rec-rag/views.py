@@ -23,14 +23,16 @@ def render_markdown_response(content: str, t_idx: int) -> None:
 
     if book_titles:
         st.caption("✨ **Quick Actions:**")
-        # SAFE: No key parameter passed into columns initialization
         cols = st.columns(len(book_titles))
         for idx, title in enumerate(book_titles):
             with cols[idx]:
                 btn_key = f"save_btn_chat_{t_idx}_{idx}"
+                
+                # ─── FIXED: EXTRACT INDEX 0 BEFORE STRIPPING ───
                 display_name = (
-                    title.split("by").strip() if "by" in title else title
+                    title.split("by")[0].strip() if "by" in title else title
                 )
+                
                 if st.button(f"📥 Save: {display_name}", key=btn_key, width="stretch"):
                     utils.save_book_to_list(title)
                     st.session_state.reading_list = (
