@@ -108,13 +108,26 @@ def fetch_analytics_logs() -> list[tuple]:
 
 
 def load_persisted_reading_list() -> list[dict]:
-    """Fetches all structured book metrics including active ratings and reviews."""
+    """Fetches all structured book metrics with proper column mapping and row IDs."""
     conn = sqlite3.connect(DB_FILE)
+    # Added explicit 'id' collection to ensure complete unique identification
     rows = conn.cursor().execute(
-        "SELECT book_title, rating, review_notes FROM reading_list ORDER BY id DESC"
+        "SELECT id, book_title, rating, review_notes FROM reading_list ORDER BY id DESC"
     ).fetchall()
     conn.close()
-    return [{"title": r[0], "rating": r[1], "review": r[2]} for r in rows]
+    
+    # Map row fields reliably matching individual array indices
+    return [
+        {
+            "id": row[0],
+            "title": row[1],
+            "rating": row[2],
+            "review": row[3]
+        } 
+        for row in rows
+    ]
+
+
 
 
 def save_book_to_list(book_title: str) -> None:
