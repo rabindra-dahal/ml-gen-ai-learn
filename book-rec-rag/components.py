@@ -32,39 +32,55 @@ def render_compact_tracker() -> None:
     
     if not st.session_state.reading_list:
         st.info("Your list is empty. Click a quick-save button under suggestions to log entries here!")
-        return
-
-    c_list, c_acts = st.columns(2)
-    
-    with c_list:
-        for idx, book in enumerate(st.session_state.reading_list):
-            stars_preview = "⭐" * book["rating"] if book["rating"] > 0 else "Unrated"
-            
-            # SAFE: No key parameter passed into columns initialization
-            col_lbl, col_btn = st.columns(2)
-            
-            with col_lbl:
-                st.write(f"**{book['title']}** — {stars_preview}")
-            
-            with col_btn:
-                if st.button("✏️ Edit", key=f"btn_edit_action_id_{idx}", width="stretch"):
-                    show_review_modal(book, idx)
+    else:
+        c_list, c_acts = st.columns(2)
+        
+        with c_list:
+            for idx, book in enumerate(st.session_state.reading_list):
+                stars_preview = "⭐" * book["rating"] if book["rating"] > 0 else "Unrated"
+                col_lbl, col_btn = st.columns(2)
                 
-    with c_acts:
-        txt_export = "MY READING TRACKER LOGS:\n\n"
-        for b in st.session_state.reading_list:
-            txt_export += f"- {b['title']}\n  Rating: {'★' * b['rating']}\n  Notes: {b['review']}\n\n"
+                with col_lbl:
+                    st.write(f"**{book['title']}** — {stars_preview}")
+                
+                with col_btn:
+                    if st.button("✏️ Edit", key=f"btn_edit_action_id_{idx}", width="stretch"):
+                        show_review_modal(book, idx)
+                    
+        with c_acts:
+            txt_export = "MY READING TRACKER LOGS:\n\n"
+            for b in st.session_state.reading_list:
+                txt_export += f"- {b['title']}\n  Rating: {'★' * b['rating']}\n  Notes: {b['review']}\n\n"
 
-        st.download_button(
-            "📥 Export Logs Text",
-            data=txt_export,
-            file_name="reading_history_log.txt",
-            mime="text/plain",
-            width="stretch",
-            key="download_log_tracker_btn_fixed"
-        )
+            st.download_button(
+                "📥 Export Logs Text",
+                data=txt_export,
+                file_name="reading_history_log.txt",
+                mime="text/plain",
+                width="stretch",
+                key="download_log_tracker_btn_fixed"
+            )
 
-        if st.button("🗑️ Wipe All Logs", width="stretch", key="clear_all_logs_btn_fixed"):
-            utils.delete_all_tracked_books()
-            st.session_state.reading_list = []
+            if st.button("🗑️ Wipe All Logs", width="stretch", key="clear_all_logs_btn_fixed"):
+                utils.delete_all_tracked_books()
+                st.session_state.reading_list = []
+                st.rerun()
+
+    st.markdown("---")
+    # ─── NEW: CUSTOM KNOWLEDGE BASE UPLOADER WIDGET ───
+    st.write("### 📤 Custom RAG Knowledge Base Uploader")
+    st.caption("Upload `.txt` or `.md` book summaries or documents to parse them instantly into the vector similarity search index.")
+    
+    uploaded_files = st.file_uploader(
+        "Choose local document text fragments:", 
+        type=["txt", "md"], 
+        accept_multiple_files=True,
+        key="rag_knowledge_file_uploader"
+    )
+    
+    if uploaded_files:
+        # Expose a centralized processing submit button to ensure no multi-run layout drops trigger
+        if st.button("🚀 Parse & Index Uploaded Documents", type="primary", width="stretch"):
+            # Expose a proxy backhook variable handle directly inside session state to process
+            st.session_state.pending_rag_uploads = uploaded_files
             st.rerun()
