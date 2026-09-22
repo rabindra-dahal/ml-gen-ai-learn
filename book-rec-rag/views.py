@@ -23,14 +23,14 @@ def render_markdown_response(content: str, t_idx: int) -> None:
 
     if book_titles:
         st.caption("✨ **Quick Actions:**")
-        cols = st.columns(len(book_titles))
+        # FIXED: Enforce clear, non-colliding column structures inside dynamic threads
+        cols = st.columns(len(book_titles), key=f"chat_turn_cols_{t_idx}")
         for idx, title in enumerate(book_titles):
             with cols[idx]:
-                btn_key = f"save_{t_idx}_{idx}"
+                btn_key = f"save_btn_chat_{t_idx}_{idx}"
                 display_name = (
-                    title.split("by")[0].strip() if "by" in title else title
+                    title.split("by").strip() if "by" in title else title
                 )
-                # FIXED: use_container_width=True replaced with width="stretch"
                 if st.button(f"📥 Save: {display_name}", key=btn_key, width="stretch"):
                     utils.save_book_to_list(title)
                     st.session_state.reading_list = (
