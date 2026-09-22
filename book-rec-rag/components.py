@@ -40,10 +40,9 @@ def render_compact_tracker() -> None:
         for idx, book in enumerate(st.session_state.reading_list):
             stars_preview = "⭐" * book["rating"] if book["rating"] > 0 else "Unrated"
             
-            # FIXED: Removed the invalid `key` argument from st.columns
-            col_lbl, col_btn = st.columns([3, 1])
+            # SAFE: No key parameter passed into columns initialization
+            col_lbl, col_btn = st.columns(2)
             
-            # Use safe 'with' contexts to isolate rendering scopes perfectly
             with col_lbl:
                 st.write(f"**{book['title']}** — {stars_preview}")
             
