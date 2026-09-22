@@ -9,7 +9,6 @@ def show_review_modal(book_data: dict, index: int) -> None:
     """Renders an overlay dialog window for writing book logs without breaking layouts."""
     st.write(f"#### Edit Entry for: {book_data['title']}")
     
-    # GUARANTEED UNIQUE: Bound strictly to the structural loop iteration index parameter
     with st.form(key=f"modal_form_instance_id_{index}", border=False):
         current_stars = st.feedback(
             "stars", key=f"modal_stars_instance_id_{index}", default=book_data["rating"]
@@ -35,20 +34,22 @@ def render_compact_tracker() -> None:
         st.info("Your list is empty. Click a quick-save button under suggestions to log entries here!")
         return
 
-    c_list, c_acts = st.columns()
+    c_list, c_acts = st.columns(2)
     
     with c_list:
         for idx, book in enumerate(st.session_state.reading_list):
             stars_preview = "⭐" * book["rating"] if book["rating"] > 0 else "Unrated"
             
-            # GUARANTEED UNIQUE: Isolate row grids strictly by the loop index counter
-            col_lbl, col_btn = st.columns([3, 1], key=f"row_grid_layout_id_{idx}")
+            # FIXED: Removed the invalid `key` argument from st.columns
+            col_lbl, col_btn = st.columns([3, 1])
             
-            col_lbl.write(f"**{book['title']}** — {stars_preview}")
+            # Use safe 'with' contexts to isolate rendering scopes perfectly
+            with col_lbl:
+                st.write(f"**{book['title']}** — {stars_preview}")
             
-            # GUARANTEED UNIQUE: Standardized to loop indices to prevent property clashes
-            if col_btn.button("✏️ Edit Review", key=f"btn_edit_action_id_{idx}", width="stretch"):
-                show_review_modal(book, idx)
+            with col_btn:
+                if st.button("✏️ Edit", key=f"btn_edit_action_id_{idx}", width="stretch"):
+                    show_review_modal(book, idx)
                 
     with c_acts:
         txt_export = "MY READING TRACKER LOGS:\n\n"
