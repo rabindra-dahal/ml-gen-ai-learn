@@ -30,13 +30,13 @@ def get_gemini_client() -> genai.Client:
 client = get_gemini_client()
 st.set_page_config(page_title="GenAI Book Finder", page_icon="📚", layout="wide")
 
+
 def seed_knowledge_base() -> None:
-    """Seeds the RAG vector store using a single optimized Batch API call with strict counter logic."""
+    """Seeds the RAG vector store using a single optimized Batch API call."""
     conn = sqlite3.connect(utils.DB_FILE)
-    count = conn.cursor().execute("SELECT COUNT(*) FROM book_knowledge_base").fetchone()[0]
+    count = conn.cursor().execute("SELECT COUNT(*) FROM book_knowledge_base").fetchone()
     conn.close()
 
-    # CRITICAL TRACKING GUARD: Only run if the database knowledge base is totally empty
     if count == 0:
         with st.spinner("Embedding Reference Library in 1 batch call..."):
             catalog = [
@@ -46,14 +46,10 @@ def seed_knowledge_base() -> None:
             ]
             
             texts_to_embed = [f"{b['title']} {b['author']}" for b in catalog]
-            
-            # Fire the 1 actual API call
             emb_resp = client.models.embed_content(
                 model="gemini-embedding-001", 
                 contents=texts_to_embed
             )
-            
-            # Increment your table exactly ONCE for this transaction loop
             utils.increment_api_counter("Batch Embedding (Seeding)")
             
             if emb_resp.embeddings:
@@ -62,8 +58,6 @@ def seed_knowledge_base() -> None:
                     utils.save_book_to_knowledge_base(
                         b["title"], b["author"], b["genre"], b["summary"], vector_values
                     )
-        
-        # Force a programmatic layout clean-slate rerun so your metric reads exactly "1 calls" 
         st.rerun()
 
 
@@ -97,6 +91,35 @@ st.title("📚 Your GenAI Literary Companion")
 tab_chat, tab_logs = st.tabs(["💬 Dynamic Chat Assistant", "📊 My Reading Logs & Tracker"])
 
 with tab_logs:
+    # ─── NEW: DYNAMIC UPLOAD DATA STREAM PROCESSING WORKFLOW ───
+    if "pending_rag_uploads" in st.session_state and st.session_state.pending_rag_uploads:
+        uploaded_files = st.session_state.pending_rag_uploads
+        del st.session_state.pending_rag_uploads # Clear state immediately to prevent infinite loop loops
+        
+        with st.spinner("Parsing text files and executing vector index injection operations..."):
+            for uploaded_file in uploaded_files:
+                file_text = uploaded_file.read().decode("utf-8")
+                
+                # Fetch a vector signature footprint tracking payload
+                emb_res = client.models.embed_content(
+                    model="gemini-embedding-001", 
+                    contents=file_text
+                )
+                utils.increment_api_counter("Embedding (Custom Document Upload)")
+                
+                if emb_res.embeddings:
+                    # Clean filename components out safely to assign dummy metadata
+                    doc_title = os.path.splitext(uploaded_file.name)[0]
+                    utils.save_book_to_knowledge_base(
+                        title=doc_title,
+                        author="Custom Contributor",
+                        genre="Uploaded Context Collection",
+                        summary=file_text[:200] + "...", # Store first 200 character footprint summary
+                        embedding=emb_res.embeddings[0].values
+                    )
+            st.toast(f"Successfully processed and indexed {len(uploaded_files)} custom files into RAG store!")
+            st.rerun()
+
     charts.render_analytics_dashboard(utils.fetch_analytics_logs())
     components.render_compact_tracker()
 
@@ -121,11 +144,8 @@ with tab_chat:
         st.session_state.book_messages.append({"role": "user", "content": user_input})
 
         try:
-            # Single embedding lookup call for the incoming user string text
             emb_resp = client.models.embed_content(model="gemini-embedding-001", contents=user_input)
             utils.increment_api_counter("Embedding (User Query)")
-            
-            # Map index array values out of the singular item output safely
             q_emb = emb_resp.embeddings[0].values if emb_resp.embeddings else None
             rag_context = json.dumps(utils.query_vector_store_rag(q_emb, limit=1)) if q_emb else "[]"
         except Exception:
