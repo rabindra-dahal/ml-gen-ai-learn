@@ -23,9 +23,10 @@ def render_markdown_response(content: str, t_idx: int) -> None:
 
     if book_titles:
         st.caption("✨ **Quick Actions:**")
-        # FIXED: Enforce clear, non-colliding column structures inside dynamic threads
-        cols = st.columns(len(book_titles), key=f"chat_turn_cols_{t_idx}")
+        # FIXED: Removed 'key' parameter argument from columns framework
+        cols = st.columns(len(book_titles))
         for idx, title in enumerate(book_titles):
+            # Render using explicit content blocks
             with cols[idx]:
                 btn_key = f"save_btn_chat_{t_idx}_{idx}"
                 display_name = (
