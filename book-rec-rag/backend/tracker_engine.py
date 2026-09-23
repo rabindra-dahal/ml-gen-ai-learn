@@ -65,6 +65,26 @@ def load_persisted_reading_list() -> list[dict]:
         for book_id, title, rating, review in rows
     ]
 
+# Add Math Metrics Calculation Hook
+def fetch_kpi_summary_metrics() -> dict:
+    """Calculates active analytical metrics summary counts across historical reading logs."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Calculate totals and average star evaluations
+    books_data = cursor.execute("SELECT rating FROM reading_list").fetchall()
+    total_saved = len(books_data)
+    
+    rated_books = [r[0] for r in books_data if r[0] > 0]
+    avg_rating = sum(rated_books) / len(rated_books) if rated_books else 0.0
+    
+    conn.close()
+    return {
+        "total_saved": total_saved,
+        "avg_rating": round(avg_rating, 1)
+    }
+
+
 def save_book_to_list(book_title: str) -> None:
     """Appends a new unique book title string cleanly into SQLite storage."""
     conn = get_db_connection()

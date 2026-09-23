@@ -2,3 +2,4 @@
 # backend/chat_history.py (Handles session retention workflows)
 # backend/tracker_engine.py (Orchestrates goals, telemetry, and lists metrics)
 # backend/vector_store.py (Executes numpy-accelerated RAG lookups)
+# backend/tracker_engine.py (Add Math Metrics Calculation Hook)
