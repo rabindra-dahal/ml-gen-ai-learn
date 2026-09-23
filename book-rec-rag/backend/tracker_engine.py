@@ -72,18 +72,21 @@ def fetch_kpi_summary_metrics() -> dict:
     cursor = conn.cursor()
     
     # Calculate totals and average star evaluations
-    books_data = cursor.execute("SELECT rating FROM reading_list").fetchall()
+    books_data = cursor.execute("SELECT rating, review_notes FROM reading_list").fetchall()
     total_saved = len(books_data)
     
     rated_books = [r[0] for r in books_data if r[0] > 0]
     avg_rating = sum(rated_books) / len(rated_books) if rated_books else 0.0
     
+    # ─── NEW: COUNTS ONLY DISCOVERED BOOKS WITH ACTIVE REVIEWS ───
+    completed_reviews = len([r for r in books_data if r[1] and str(r[1]).strip() != ""])
+    
     conn.close()
     return {
         "total_saved": total_saved,
-        "avg_rating": round(avg_rating, 1)
+        "avg_rating": round(avg_rating, 1),
+        "completed_reviews": completed_reviews
     }
-
 
 def save_book_to_list(book_title: str) -> None:
     """Appends a new unique book title string cleanly into SQLite storage."""
