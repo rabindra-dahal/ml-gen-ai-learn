@@ -59,8 +59,14 @@ tab_chat, tab_logs = st.tabs(["💬 Dynamic Chat Assistant", "📊 My Reading Lo
 
 with tab_logs:
     uploader.process_custom_rag_uploads(client)
-    charts.render_analytics_dashboard(tracker_engine.fetch_analytics_logs())
-    tracker.render_compact_tracker()
+    # ─── UPDATED: PASS ACTIVE SIDEBAR PARAMETERS TO CHARTS & TRACKERS ───
+    metrics = tracker_engine.fetch_kpi_summary_metrics()
+    charts.render_analytics_dashboard(
+            analytics_logs=tracker_engine.fetch_analytics_logs(),
+            target_goal=target_reading_pace,
+            completed_count=metrics['completed_reviews']
+        )
+    tracker.render_compact_tracker(target_goal=target_reading_pace)
     uploader.render_uploader_widget()
     # ─── INJECT THE RUNNER BLOCK DIRECTLY HERE ───
     inventory.render_document_inventory_table()

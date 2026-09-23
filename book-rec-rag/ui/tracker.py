@@ -34,7 +34,23 @@ def show_review_modal(book_data: dict, index: int) -> None:
             st.rerun()
 
 
-def render_compact_tracker() -> None:
+def render_compact_tracker(target_goal: int) -> None: # Added target_goal parameter hook here
+    """Renders saved book logs inside table grids to maximize space allocation."""
+    metrics = tracker_engine.fetch_kpi_summary_metrics()
+    
+    st.write("### 📊 My Reading Analytics Dashboard")
+    col_kpi1, col_kpi2, col_kpi3 = st.columns(3) # Expanded to 3 columns to showcase specific reviews telemetry
+    
+    with col_kpi1:
+        st.metric(label="📚 Total Tracked Books", value=f"{metrics['total_saved']} items")
+    with col_kpi2:
+        st.metric(label="📝 Completed Book Reviews", value=f"{metrics['completed_reviews']} completed")
+    with col_kpi3:
+        stars_label = f"⭐ {metrics['avg_rating']}" if metrics['avg_rating'] > 0 else "No ratings"
+        st.metric(label="📈 Average Library Evaluation", value=stars_label)
+    
+    st.markdown("---")
+    
     """Renders saved book logs inside table grids to maximize space allocation."""
     # ─── NEW: LIVE TELEMETRY KPI SUMMARY CARD BLOCK ───
     metrics = tracker_engine.fetch_kpi_summary_metrics()
