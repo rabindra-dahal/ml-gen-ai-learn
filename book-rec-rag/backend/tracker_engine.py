@@ -46,14 +46,24 @@ def fetch_analytics_logs() -> list[tuple]:
 
 
 def load_persisted_reading_list() -> list[dict]:
-    """Fetches all structured book metrics with proper column mapping and row IDs."""
+    """Fetches all structured book metrics with explicit row tuple unpacking to prevent tuple type mismatches."""
     conn = get_db_connection()
     rows = conn.cursor().execute(
         "SELECT id, book_title, rating, review_notes FROM reading_list ORDER BY id DESC"
     ).fetchall()
     conn.close()
-    return [{"id": row[0], "title": row[1], "rating": row[2], "review": row[3]} for row in rows]
-
+    
+    # ─── FIXED: EXPLICITLY UNPACK THE TUPLE FIELDS INSIDE THE COMPREHENSION LOOP ───
+    # This separates each index immediately, forcing 'rating' into a clean, standalone integer object.
+    return [
+        {
+            "id": book_id,
+            "title": title,
+            "rating": rating,
+            "review": review
+        } 
+        for book_id, title, rating, review in rows
+    ]
 
 def save_book_to_list(book_title: str) -> None:
     """Appends a new unique book title string cleanly into SQLite storage."""
