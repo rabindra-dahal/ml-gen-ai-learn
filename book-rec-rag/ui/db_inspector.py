@@ -49,7 +49,7 @@ def render_database_tables_inspector() -> None:
                 # Build an interactive data table representation frame
                 st.dataframe(
                     df,
-                    use_container_width=True,
+                    width='stretch',
                     key=f"dataframe_render_instance_{selected_table}"
                 )
                 st.caption(f"Total Record Footprint Count: `{len(data_rows)} rows` managed in `{selected_table}`.")
