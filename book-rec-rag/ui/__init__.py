@@ -1,0 +1,6 @@
+# ui/seeder.py (Initializes reference assets)
+# ui/uploader.py (Handles document vector uploads)
+# ui/tracker.py (Manages review forms and list grid views)
+# ui/chat_loop.py (Manages conversational loops)
+# ui/inventory.py (Create the Visual Management Deck)
+# ui/db_inspector.py (Fetch row items using raw SQL transactions)
