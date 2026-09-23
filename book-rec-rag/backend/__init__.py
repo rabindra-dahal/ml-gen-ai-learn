@@ -1,0 +1,4 @@
+# backend/db_core.py (Manages connection lifecycles and table Blueprints)
+# backend/chat_history.py (Handles session retention workflows)
+# backend/tracker_engine.py (Orchestrates goals, telemetry, and lists metrics)
+# backend/vector_store.py (Executes numpy-accelerated RAG lookups)

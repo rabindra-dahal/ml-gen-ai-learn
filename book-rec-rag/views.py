@@ -1,7 +1,7 @@
 """Module providing presentation layer wrappers for suggestions views."""
 
 import streamlit as st
-import utils
+from backend import tracker_engine
 
 
 def render_markdown_response(content: str, t_idx: int) -> None:
@@ -28,15 +28,13 @@ def render_markdown_response(content: str, t_idx: int) -> None:
             with cols[idx]:
                 btn_key = f"save_btn_chat_{t_idx}_{idx}"
                 
-                # ─── FIXED: EXTRACT INDEX 0 BEFORE STRIPPING ───
+                # ─── FIXED: EXTRACT THE FIRST LIST ELEMENT BEFORE STRIPPING ───
                 display_name = (
                     title.split("by")[0].strip() if "by" in title else title
                 )
                 
                 if st.button(f"📥 Save: {display_name}", key=btn_key, width="stretch"):
-                    utils.save_book_to_list(title)
-                    st.session_state.reading_list = (
-                        utils.load_persisted_reading_list()
-                    )
+                    tracker_engine.save_book_to_list(title)
+                    st.session_state.reading_list = tracker_engine.load_persisted_reading_list()
                     st.toast(f"Saved to your tracker: {display_name}!")
                     st.rerun()
